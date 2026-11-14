@@ -1,0 +1,18 @@
+Assignment 7 - Automated Log Analyzer
+Log file: sample_security.log
+------------------------------------------------
+[ALERT] Line 3 | IP: 10.0.0.8 | Type: SQL Injection
+  10.0.0.8 - - [14/Nov/2026:10:00:03 +0300] "GET /search?q=UNION SELECT username,password FROM users HTTP/1.1" 403 201
+[ALERT] Line 5 | IP: 10.0.0.9 | Type: Path Traversal
+  10.0.0.9 - - [14/Nov/2026:10:00:05 +0300] "GET /download?file=../../etc/passwd HTTP/1.1" 403 250
+[ALERT] Line 7 | IP: 172.16.2.8 | Type: SQL Injection
+  172.16.2.8 - - [14/Nov/2026:10:00:07 +0300] "GET /item?id=1%20OR%201%3D1 HTTP/1.1" 403 122
+[ALERT] Line 8 | IP: 172.16.2.9 | Type: Path Traversal
+  172.16.2.9 - - [14/Nov/2026:10:00:08 +0300] "GET /files?name=..%2Fetc%2Fpasswd HTTP/1.1" 403 112
+------------------------------------------------
+Summary
+Total lines: 10
+Suspicious lines: 4
+Normal lines: 6
+SQL Injection: 2
+Path Traversal: 2

@@ -1,0 +1,73 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'log_analyzer.py'
+      - 'test_log_analyzer.py'
+      - 'sample_security.log'
+      - '.github/workflows/build-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Get project files
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test the program
+        run: python -m unittest -v test_log_analyzer
+
+      - name: Install PyInstaller
+        run: python -m pip install --disable-pip-version-check pyinstaller
+
+      - name: Create Windows EXE
+        run: python -m PyInstaller --noconfirm --clean --onefile --console --name Log_Analyzer log_analyzer.py
+
+      - name: Check that EXE works
+        shell: pwsh
+        run: |
+          .\dist\Log_Analyzer.exe sample_security.log --report exe_test_report.txt
+          if ($LASTEXITCODE -ne 0) { throw "EXE execution failed" }
+          if (!(Test-Path exe_test_report.txt)) { throw "Report file was not created" }
+          $report = Get-Content exe_test_report.txt -Raw
+          if (!$report.Contains('SQL Injection: 2')) { throw "SQL Injection test failed" }
+          if (!$report.Contains('Path Traversal: 2')) { throw "Path Traversal test failed" }
+          if (!$report.Contains('Suspicious lines: 4')) { throw "Alert count test failed" }
+
+      - name: Upload EXE as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Log_Analyzer_Windows
+          path: dist/Log_Analyzer.exe
+          if-no-files-found: error
+
+      - name: Add EXE to repository automatically
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Copy-Item dist\Log_Analyzer.exe Log_Analyzer.exe -Force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f Log_Analyzer.exe
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "EXE already up to date"
+          } else {
+            git commit -m "Add tested Windows EXE"
+            git push origin HEAD:main
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning "Automatic commit denied. Download the EXE from Actions Artifacts and upload it manually."
+              exit 1
+            }
+          }

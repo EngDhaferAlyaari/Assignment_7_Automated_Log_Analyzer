@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+Demo_Report.txt
+EXE_Report.txt
+exe_test_report.txt
